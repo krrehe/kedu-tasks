@@ -1,0 +1,66 @@
+{
+  "name": "kedu-tasks-desktop",
+  "version": "3.1.0",
+  "private": true,
+  "description": "刻度清单 Windows 桌面端",
+  "main": "main.js",
+  "author": "Kedu Tasks",
+  "scripts": {
+    "prepare:app": "node scripts/prepare.mjs",
+    "start": "npm run prepare:app && electron .",
+    "dist": "npm run prepare:app && electron-builder --win"
+  },
+  "dependencies": {
+    "app-builder-bin": "^5.0.0-alpha.10",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.kedu.tasks",
+    "productName": "刻度清单",
+    "artifactName": "Kedu-Tasks-${version}-${arch}.${ext}",
+    "directories": {
+      "output": "../release/desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "package.json",
+      "build/icon.png",
+      "app/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "刻度清单",
+      "artifactName": "Kedu-Tasks-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Kedu-Tasks-Portable-${version}.${ext}"
+    }
+  }
+}

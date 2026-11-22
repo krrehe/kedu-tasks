@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <title>刻度清单 · TickDone</title>
+    <meta name="description" content="AI 驱动的任务管理清单，支持安卓手机与电脑多端同步。" />
+    <meta name="theme-color" content="#4C6FFF" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="刻度清单" />
+    <meta name="application-name" content="刻度清单" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #f6f7fb;
+        color: #1b1e27;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+          'Microsoft YaHei', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #f6f7fb;
+        z-index: 99;
+      }
+      #boot .mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        background: linear-gradient(140deg, #6e8bff, #3b5bf5);
+        box-shadow: 0 12px 30px rgba(59, 91, 245, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: boot-pop 0.5s ease;
+      }
+      #boot .mark svg {
+        width: 36px;
+        height: 36px;
+      }
+      #boot .txt {
+        font-size: 14px;
+        color: #8b93a4;
+        letter-spacing: 0.08em;
+      }
+      @keyframes boot-pop {
+        from {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background: #121419;
+          color: #edeff5;
+        }
+        #boot {
+          background: #121419;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M6.2 12.6l3.6 3.6 8-8.4"
+            stroke="white"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <div class="txt">刻度清单</div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

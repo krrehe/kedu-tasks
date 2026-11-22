@@ -1,0 +1,13 @@
+{
+  "appId": "com.kedu.tasks",
+  "appName": "刻度清单",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "adjustMarginsForEdgeToEdge": "force"
+  }
+}

@@ -1,0 +1,27 @@
+node_modules/
+dist/
+server/data/
+desktop/app/
+desktop/build/
+release/
+client/android/app/*.jks
+client/android/keystore.properties
+*.log
+.DS_Store
+.trae/
+
+# Android 构建产物与本机配置
+client/android/.gradle/
+client/android/build/
+client/android/app/build/
+client/android/local.properties
+client/android/app/src/main/assets/public/
+client/android/app/src/main/assets/capacitor.config.json
+client/android/app/src/main/assets/capacitor.plugins.json
+client/android/capacitor-cordova-android-plugins/
+
+# 签名与环境变量，禁止提交
+*.jks
+*.keystore
+.env
+.env.*
