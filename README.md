@@ -129,6 +129,49 @@ cd android
 
 https://github.com/krrehe/kedu-tasks/releases
 
+> Windows 安装包目前未做代码签名，首次运行可能出现 SmartScreen 提示；安卓 APK 在 Release 工作流中使用 secrets 里的 keystore 签名。
+
+## GitHub Actions
+
+仓库包含两个工作流：
+
+- `.github/workflows/ci.yml`：push / Pull Request 时构建 Web 和 Android Debug APK
+- `.github/workflows/release.yml`：推送 `v*` tag 时构建签名 APK、Windows 安装包，并自动创建 GitHub Release
+
+发布前需要在仓库 **Settings → Secrets and variables → Actions** 添加：
+
+| Secret | 说明 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | `client/android/app/kedu-release.jks` 的 Base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | 签名别名 |
+| `ANDROID_KEY_PASSWORD` | 别名密码 |
+
+生成 keystore 的 Base64（PowerShell，在本地执行，不要把输出提交到仓库）：
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("client/android/app/kedu-release.jks"))
+```
+
+### 发布新版本
+
+1. 更新 `package.json`、`client/package.json`、`desktop/package.json` 的版本
+2. 更新 `client/android/app/build.gradle` 的 `versionCode` 和 `versionName`
+3. 提交代码
+4. 创建并推送 tag：
+
+```bash
+git tag v3.1.0
+git push origin main
+git push origin v3.1.0
+```
+
+Release 工作流会校验 tag 与各 package.json、Android versionName 一致，然后自动上传：
+
+- `Kedu-Tasks-<version>.apk`
+- `Kedu-Tasks-Setup-<version>.exe`
+- `Kedu-Tasks-Portable-<version>.exe`
+
 ## License
 
 当前仓库暂未添加开源许可证。如需在其它项目中使用，请先联系作者。

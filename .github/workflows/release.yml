@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check package and Android versions
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          CLIENT_VERSION=$(node -p "require('./client/package.json').version")
+          DESKTOP_VERSION=$(node -p "require('./desktop/package.json').version")
+          if [ "$VERSION" != "$ROOT_VERSION" ] || [ "$VERSION" != "$CLIENT_VERSION" ] || [ "$VERSION" != "$DESKTOP_VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} 与 package.json 版本不一致：root=$ROOT_VERSION client=$CLIENT_VERSION desktop=$DESKTOP_VERSION"
+            exit 1
+          fi
+          if ! grep -q "versionName \"$VERSION\"" client/android/app/build.gradle; then
+            echo "::error::client/android/app/build.gradle 的 versionName 与 tag 不一致"
+            exit 1
+          fi
+
+  android:
+    name: Signed Android APK
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Configure Android SDK path
+        shell: bash
+        run: echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > client/android/local.properties
+      - name: Prepare signing keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::未配置 ANDROID_KEYSTORE_BASE64，无法生成签名 APK"
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > client/android/app/release.jks
+          {
+            echo "storeFile=release.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > client/android/keystore.properties
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+        working-directory: client
+      - run: chmod +x gradlew && ./gradlew assembleRelease
+        working-directory: client/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: client/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+  desktop:
+    name: Windows installers
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm ci
+        working-directory: desktop
+      - name: Build Windows installers
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-installers
+          path: |
+            release/desktop/Kedu-Tasks-Setup-*.exe
+            release/desktop/Kedu-Tasks-Portable-*.exe
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [android, desktop]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-release-apk
+          path: artifacts/android
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-installers
+          path: artifacts/desktop
+      - name: Create release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp artifacts/android/app-release.apk "Kedu-Tasks-${VERSION}.apk"
+          cp artifacts/desktop/Kedu-Tasks-Setup-*.exe .
+          cp artifacts/desktop/Kedu-Tasks-Portable-*.exe .
+          gh release create "$GITHUB_REF_NAME" \
+            "Kedu-Tasks-${VERSION}.apk" \
+            Kedu-Tasks-Setup-*.exe \
+            Kedu-Tasks-Portable-*.exe \
+            --title "刻度清单 ${VERSION}" \
+            --generate-notes
