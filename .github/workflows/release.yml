@@ -47,7 +47,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
       - name: Configure Android SDK path
         shell: bash
         run: echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > client/android/local.properties
